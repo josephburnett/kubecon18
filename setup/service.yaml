@@ -25,6 +25,7 @@ spec:
       revisionTemplate:
         spec:
           container:
+            # This is a reference for ko to know what binary to build
             image: github.com/josephburnett/kubecon-seattle-2018/app
             env:
             - name: VERSION
