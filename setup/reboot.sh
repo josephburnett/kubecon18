@@ -4,6 +4,7 @@ PROJECT_ID=joe-does-knative
 CLUSTER_NAME=knative-demo
 CLUSTER_ZONE=us-east1-d
 CLUSTER_INGRESS_IP=35.231.38.70
+CLUSTER_DOMAIN_NAME=josephburnett.com
 
 # Cleanup
 gcloud container clusters delete $CLUSTER_NAME \
@@ -44,6 +45,12 @@ KO_DOCKER_REPO=gcr.io/$PROJECT_ID ko apply -f config/
 kubectl patch svc knative-ingressgateway \
 	--namespace=istio-system \
 	--patch="{\"spec\": { \"loadBalancerIP\": \"$CLUSTER_INGRESS_IP\" }}"
+
+# Setup Domain
+kubectl patch configmap config-domain \
+	--namespace=knative-serving \
+	--type json \
+	--patch "[{\"op\":\"remove\",\"path\":\"/data/example.com\"},{\"op\":\"add\",\"path\":\"/data/$CLUSTER_DOMAIN_NAME\",\"value\":\"\"}]"
 
 # Deploy Sample App
 cd ~/go/src/github.com/josephburnett/kubecon-seattle-2018
