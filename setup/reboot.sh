@@ -41,12 +41,18 @@ kubectl apply -f ./third_party/istio-1.0.2/istio.yaml
 kubectl apply -f ./third_party/config/build/release.yaml
 KO_DOCKER_REPO=gcr.io/$PROJECT_ID ko apply -f config/
 
+# Attach static IP to ingress gateway
 # Based on https://github.com/knative/serving/blob/master/docs/setting-up-ingress-static-ip.md
 kubectl patch svc knative-ingressgateway \
 	--namespace=istio-system \
 	--patch="{\"spec\": { \"loadBalancerIP\": \"$CLUSTER_INGRESS_IP\" }}"
 
-# Setup Domain
+# Adjust Autoscaler Cluster Parameters
+kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"container-concurrency-target-default":"10"}}'
+
+# Setup Custom Domain
 kubectl patch configmap config-domain \
 	--namespace=knative-serving \
 	--type json \
