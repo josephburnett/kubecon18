@@ -51,6 +51,12 @@ kubectl patch svc knative-ingressgateway \
 kubectl patch configmap config-autoscaler \
 	--namespace=knative-serving \
 	--patch '{"data":{"container-concurrency-target-default":"10"}}'
+kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"scale-to-zero-threshold":"1m"}}'
+kubectl patch configmap config-autoscaler \
+	--namespace=knative-serving \
+	--patch '{"data":{"scale-to-zero-grace-period":"30s"}}'
 
 # Setup Custom Domain
 kubectl patch configmap config-domain \
