@@ -25,7 +25,7 @@ spec:
       revisionTemplate:
         spec:
           container:
-            image: gcr.io/joe-does-knative/github.com/josephburnett/kubecon-seattle-2018/app:latest
+            image: github.com/josephburnett/kubecon-seattle-2018/app
             env:
             - name: VERSION
               value: "v1"
