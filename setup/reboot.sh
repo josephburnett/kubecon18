@@ -50,7 +50,7 @@ kubectl patch svc knative-ingressgateway \
 # Adjust Autoscaler Cluster Parameters
 kubectl patch configmap config-autoscaler \
 	--namespace=knative-serving \
-	--patch '{"data":{"container-concurrency-target-default":"10"}}'
+	--patch '{"data":{"container-concurrency-target-default":"1"}}'
 kubectl patch configmap config-autoscaler \
 	--namespace=knative-serving \
 	--patch '{"data":{"scale-to-zero-threshold":"1m"}}'
@@ -68,3 +68,5 @@ kubectl patch configmap config-domain \
 cd ~/go/src/github.com/josephburnett/kubecon-seattle-2018
 kubectl create ns kubecon-seattle-2018
 kubectl apply -f app/service.yaml
+sleep 30
+curl http://app.kubecon-seattle-2018.josephburnett.com/

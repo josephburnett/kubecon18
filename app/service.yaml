@@ -28,4 +28,4 @@ spec:
             image: gcr.io/joe-does-knative/github.com/josephburnett/kubecon-seattle-2018/app:latest
             env:
             - name: VERSION
-              value: "v1"
+              value: "Hello Kubecon"
