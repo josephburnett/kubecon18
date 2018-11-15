@@ -65,6 +65,7 @@ kubectl patch configmap config-domain \
 	--patch "[{\"op\":\"remove\",\"path\":\"/data/example.com\"},{\"op\":\"add\",\"path\":\"/data/$CLUSTER_DOMAIN_NAME\",\"value\":\"\"}]"
 
 # Deploy Sample App
+sleep 60
 cd ~/go/src/github.com/josephburnett/kubecon-seattle-2018
 kubectl create ns kubecon-seattle-2018
 kubectl apply -f app/service.yaml

@@ -75,10 +75,11 @@ func main() {
 	for {
 		select {
 		case <-tickerCh:
+			fmt.Printf("%v ms requests consuming %v cpu and %v mb of memory\n\n", *sleep, *prime, *bloat)
 			for i, client := range clients {
 				fmt.Printf("%v: %v\n", i, client.lastResponse)
 			}
-			fmt.Printf("\n\n\n")
+			fmt.Printf("\n\n")
 		case <-stopCh:
 			os.Exit(0)
 		}
