@@ -20,6 +20,7 @@ var (
 )
 
 type client struct {
+	requestCount int
 	lastResponse string
 	err          error
 }
@@ -47,6 +48,7 @@ func (c *client) start(stopCh <-chan struct{}) {
 			resp.Body.Close()
 			c.err = nil
 			c.lastResponse = strings.TrimSpace(string(body))
+			c.requestCount++
 		case <-stopCh:
 			return
 		}
@@ -76,8 +78,9 @@ func main() {
 		select {
 		case <-tickerCh:
 			fmt.Printf("%v ms requests consuming %v cpu and %v mb of memory\n\n", *sleep, *prime, *bloat)
+			fmt.Printf("ID\tCOUNT\tLAST RESPONSE\n")
 			for i, client := range clients {
-				fmt.Printf("%v: %v\n", i, client.lastResponse)
+				fmt.Printf("%v\t%v\t%v\n", i, client.requestCount, client.lastResponse)
 			}
 			fmt.Printf("\n\n")
 		case <-stopCh:

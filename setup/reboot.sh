@@ -50,7 +50,7 @@ kubectl patch svc knative-ingressgateway \
 # Adjust Autoscaler Cluster Parameters
 kubectl patch configmap config-autoscaler \
 	--namespace=knative-serving \
-	--patch '{"data":{"container-concurrency-target-default":"1"}}'
+	--patch '{"data":{"container-concurrency-target-default":"10"}}'
 kubectl patch configmap config-autoscaler \
 	--namespace=knative-serving \
 	--patch '{"data":{"scale-to-zero-threshold":"1m"}}'
