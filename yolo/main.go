@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 
+	clientset "github.com/knative/serving/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -20,8 +21,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error building kubeconfig: %v", err)
 	}
-	_, err = kubernetes.NewForConfig(cfg)
+	kubeClient, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Fatalf("Error building kubernetes clientset: %v", err)
+	}
+	knativeClient, err := clientset.NewForConfig(cfg)
+	if err != nil {
+		log.Fatalf("Error building serving clientset: %v", err)
+	}
+	_, err = kubeClient.CoreV1().Pods("").Watch(metav1.ListOptions{})
+	if err != nil {
+		log.Fatalf("Error establishing watch on pods: %v", err)
+	}
+	_, err = knativeClient.Autoscaling().V1alpha1().PodAutoscalers("").Watch(metav1.ListOptions())
+	if err != nil {
+		log.Fatalf("Error establishing watch on PodAutoscalers: %v", err)
 	}
 }
