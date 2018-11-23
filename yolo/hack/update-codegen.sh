@@ -28,7 +28,6 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${SCRIPT_ROOT}; ls -d -1 ./vendor/k8s.io/code-ge
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/client github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/apis \
   "autoscaling:v1alpha1" \
-  --output-base "$(dirname ${BASH_SOURCE})/../../.." \
   --go-header-file ${SCRIPT_ROOT}/hack/boilerplate.go.txt \
   -v 2
 
