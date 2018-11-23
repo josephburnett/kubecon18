@@ -31,5 +31,11 @@ ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
   --go-header-file ${SCRIPT_ROOT}/hack/boilerplate.go.txt \
   -v 2
 
+# Depends on generate-groups.sh to install bin/deepcopy-gen
+${GOPATH}/bin/deepcopy-gen \
+  -O zz_generated.deepcopy \
+  --go-header-file ${SCRIPT_ROOT}/hack/boilerplate.go.txt \
+  -i github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/apis/autoscaling/v1alpha1
+
 # To use your own boilerplate text use:
 #   --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt

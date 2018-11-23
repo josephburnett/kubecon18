@@ -20,10 +20,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/apis/autoscaling"
 	"github.com/knative/pkg/apis"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
-	"github.com/knative/serving/pkg/apis/autoscaling"
-	servingv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,19 +66,11 @@ type PodAutoscalerSpec struct {
 	// +optional
 	Generation int64 `json:"generation,omitempty"`
 
-	// ConcurrencyModel specifies the desired concurrency model
-	// (Single or Multi) for the scale target. Defaults to Multi.
-	// Deprecated in favor of ContainerConcurrency.
-	// +optional
-	ConcurrencyModel servingv1alpha1.RevisionRequestConcurrencyModelType `json:"concurrencyModel,omitempty"`
-
 	// ContainerConcurrency specifies the maximum allowed
 	// in-flight (concurrent) requests per container of the Revision.
 	// Defaults to `0` which means unlimited concurrency.
-	// This field replaces ConcurrencyModel. A value of `1`
-	// is equivalent to `Single` and `0` is equivalent to `Multi`.
 	// +optional
-	ContainerConcurrency servingv1alpha1.RevisionContainerConcurrencyType `json:"containerConcurrency,omitempty"`
+	ContainerConcurrency int32 `json:"containerConcurrency,omitempty"`
 
 	// ScaleTargetRef defines the /scale-able resource that this PodAutoscaler
 	// is responsible for quickly right-sizing.
