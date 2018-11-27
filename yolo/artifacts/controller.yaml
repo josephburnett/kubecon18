@@ -15,5 +15,5 @@ spec:
     spec:
       serviceAccountName: controller
       containers:
-      - name: controller
+      - name: yolo
         image: github.com/josephburnett/kubecon-seattle-2018/yolo
