@@ -23,9 +23,12 @@ spec:
   runLatest:
     configuration:
       revisionTemplate:
+        metadata:
+          annotations:
+            autoscaling.knative.dev/class: hpa
         spec:
           container:
             image: gcr.io/joe-does-knative/github.com/josephburnett/kubecon-seattle-2018/app:latest
             env:
             - name: VERSION
-              value: "Hello Kubecon"
+              value: "Hello KPA"

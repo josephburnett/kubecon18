@@ -1,79 +1,120 @@
-/*
-Copyright 2017 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
 	"flag"
-	"time"
+	"log"
 
+	"github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/apis/autoscaling/v1alpha1"
 	clientset "github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/client/clientset/versioned"
-	informers "github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/client/informers/externalversions"
-	kubeinformers "k8s.io/client-go/informers"
+	duck "github.com/knative/pkg/apis/duck/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
-	"k8s.io/sample-controller/pkg/signals"
-)
-
-var (
-	masterURL  string
-	kubeconfig string
 )
 
 func main() {
-	flag.Parse()
 
-	// set up signals so we handle the first shutdown signal gracefully
-	stopCh := signals.SetupSignalHandler()
-
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	// Watch for changes
+	w, err := autoscalingClient.AutoscalingV1alpha1().PodAutoscalers("kubecon-seattle-2018").Watch(v1.ListOptions{})
 	if err != nil {
-		klog.Fatalf("Error building kubeconfig: %s", err.Error())
+		log.Fatalf("Error establishing watch on PodAutoscalers: %v", err)
 	}
+	defer w.Stop()
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
-	}
+	for {
+		event, ok := <-w.ResultChan()
+		if !ok {
+			log.Printf("My channel is closed. I'm going home now.")
+			return
+		}
+		pa, ok := event.Object.(*v1alpha1.PodAutoscaler)
+		if !ok {
+			log.Printf("Ignoring non-PodAutoscaler object %v", event.Object)
+			continue
+		}
+		switch event.Type {
+		case watch.Added:
+			if pa.Annotations["autoscaling.knative.dev/class"] == "yolo" {
 
-	autoscalingClient, err := clientset.NewForConfig(cfg)
-	if err != nil {
-		klog.Fatalf("Error building autoscaling clientset: %s", err.Error())
-	}
+				// Calculate a recommended scale
+				replicas := recommendedScale(pa)
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	autoscalingInformerFactory := informers.NewSharedInformerFactory(autoscalingClient, time.Second*30)
+				// Update the Deployment
+				scaleTo(pa, replicas)
 
-	controller := NewController(kubeClient, autoscalingClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
-		autoscalingInformerFactory.Autoscaling().V1alpha1().PodAutoscalers())
+				// Update status
+				updateStatus(pa, replicas)
 
-	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
-	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
-	kubeInformerFactory.Start(stopCh)
-	autoscalingInformerFactory.Start(stopCh)
-
-	if err = controller.Run(2, stopCh); err != nil {
-		klog.Fatalf("Error running controller: %s", err.Error())
+			} else {
+				log.Printf("Ignoring non-yolo class PodAutoscaler %v.", pa.Name)
+			}
+		default:
+			log.Printf("Ignoring event %q for PodAutoscaler %q.", event.Type, pa.Name)
+		}
 	}
 }
 
+func recommendedScale(pa *v1alpha1.PodAutoscaler) int32 {
+	return 2
+}
+
+func scaleTo(pa *v1alpha1.PodAutoscaler, replicas int32) {
+	deployment, err := kubeClient.AppsV1().Deployments("kubecon-seattle-2018").Get(pa.Name+"-deployment", v1.GetOptions{})
+	if err != nil {
+		log.Printf("Error getting Deployment %q: %v", pa.Name, err)
+		return
+	}
+	deployment.Spec.Replicas = &replicas
+	if _, err := kubeClient.AppsV1().Deployments("kubecon-seattle-2018").Update(deployment); err != nil {
+		log.Printf("Error updating Deployment %q: %v", pa.Name, err)
+	}
+}
+
+func updateStatus(oldPa *v1alpha1.PodAutoscaler, replicas int32) {
+	pa, err := autoscalingClient.AutoscalingV1alpha1().PodAutoscalers("kubecon-seattle-2018").Get(oldPa.Name, v1.GetOptions{})
+	if err != nil {
+		log.Printf("Error getting PodAutoscaler %q: %v.", pa.Name, err)
+		return
+	}
+	// pa.Status.RecommendedScale = &replicas
+	pa.Status.MarkActive()
+	pa.Status.SetConditions(duck.Conditions{{
+		Type:   duck.ConditionReady,
+		Status: corev1.ConditionTrue,
+		Reason: "I was born ready",
+	}})
+	if _, err := autoscalingClient.AutoscalingV1alpha1().PodAutoscalers("kubecon-seattle-2018").Update(pa); err != nil {
+		log.Printf("Error updating PodAutoscaler %q: %v.", pa.Name, err)
+	}
+}
+
+var (
+	kubeconfig        string
+	masterURL         string
+	kubeClient        kubernetes.Interface
+	autoscalingClient clientset.Interface
+)
+
 func init() {
+
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+
+	// Make Kubernetes and Knative Autoscaling clients.
+	flag.Parse()
+	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	if err != nil {
+		log.Fatalf("Error building kubeconfig: %v", err)
+	}
+	kubeClient, err = kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Fatalf("Error building kubernetes clientset: %v", err)
+	}
+	autoscalingClient, err = clientset.NewForConfig(cfg)
+	if err != nil {
+		log.Fatalf("Error building autoscaling clientset: %v", err)
+	}
 }
