@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-controller
+  namespace: knative-serving
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo-controller
+  template:
+    metadata:
+      labels:
+        app: yolo-controller
+    spec:
+      serviceAccountName: controller
+      containers:
+      - name: controller
+        image: github.com/josephburnett/kubecon-seattle-2018/yolo
