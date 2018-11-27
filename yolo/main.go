@@ -30,13 +30,11 @@ func main() {
 			log.Printf("My channel is closed. I'm going home now.")
 			return
 		}
-		pa, ok := event.Object.(*v1alpha1.PodAutoscaler)
-		if !ok {
-			log.Printf("Ignoring non-PodAutoscaler object %v", event.Object)
-			continue
-		}
+		pa := event.Object.(*v1alpha1.PodAutoscaler)
 		switch event.Type {
 		case watch.Added:
+
+			// Take control of yolo-class PodAutoscalers only
 			if pa.Annotations["autoscaling.knative.dev/class"] == "yolo" {
 
 				// Calculate a recommended scale
@@ -48,16 +46,14 @@ func main() {
 				// Update status
 				updateStatus(pa, replicas)
 
-			} else {
-				log.Printf("Ignoring non-yolo class PodAutoscaler %v.", pa.Name)
 			}
-		default:
-			log.Printf("Ignoring event %q for PodAutoscaler %q.", event.Type, pa.Name)
 		}
 	}
 }
 
 func recommendedScale(pa *v1alpha1.PodAutoscaler) int32 {
+
+	// Do something really smart here ...
 	return 2
 }
 
