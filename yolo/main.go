@@ -17,18 +17,14 @@ import (
 
 func main() {
 
-	// Watch for changes
-	w, err := autoscalingClient.AutoscalingV1alpha1().PodAutoscalers("kubecon-seattle-2018").Watch(v1.ListOptions{})
-	if err != nil {
-		log.Fatalf("Error establishing watch on PodAutoscalers: %v", err)
-	}
-	defer w.Stop()
+	w := establishWatch()
 
 	for {
 		event, ok := <-w.ResultChan()
 		if !ok {
-			log.Printf("My channel is closed. I'm going home now.")
-			return
+			w.Stop()
+			w = establishWatch()
+			continue
 		}
 		pa := event.Object.(*v1alpha1.PodAutoscaler)
 		switch event.Type {
@@ -113,4 +109,13 @@ func init() {
 	if err != nil {
 		log.Fatalf("Error building autoscaling clientset: %v", err)
 	}
+}
+
+func establishWatch() watch.Interface {
+	// Watch for changes
+	w, err := autoscalingClient.AutoscalingV1alpha1().PodAutoscalers("kubecon-seattle-2018").Watch(v1.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
+	return w
 }
