@@ -69,7 +69,9 @@ cd ~/go/src/github.com/josephburnett/kubecon-seattle-2018
 ko apply -f yolo/artifacts/
 
 # Deploy Sample App
+sleep 60 # I get app-00000 if I create the service too soon !?
 kubectl create ns kubecon-seattle-2018
 kubectl apply -f app/service.yaml
-sleep 30
+sleep 30 # Let the app startup
+echo
 curl http://app.kubecon-seattle-2018.josephburnett.com/
