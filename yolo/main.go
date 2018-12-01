@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/apis/autoscaling/v1alpha1"
 	clientset "github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/client/clientset/versioned"
@@ -22,31 +23,37 @@ import (
 func main() {
 
 	w := establishWatch()
+	resync := time.NewTicker(30 * time.Second).C
 
 	for {
-		event, ok := <-w.ResultChan()
-		if !ok {
+		select {
+		case event, ok := <-w.ResultChan():
+			if !ok {
+				w.Stop()
+				w = establishWatch()
+				continue
+			}
+			pa := event.Object.(*v1alpha1.PodAutoscaler)
+			switch event.Type {
+			case watch.Added:
+
+				// Take control of yolo-class PodAutoscalers only
+				if pa.Annotations["autoscaling.knative.dev/class"] == "yolo" {
+
+					// Calculate a recommended scale
+					replicas := recommendedScale(pa)
+
+					// Update the Deployment
+					scaleTo(pa, replicas)
+
+					// Update status
+					updateStatus(pa, replicas)
+
+				}
+			}
+		case <-resync:
 			w.Stop()
 			w = establishWatch()
-			continue
-		}
-		pa := event.Object.(*v1alpha1.PodAutoscaler)
-		switch event.Type {
-		case watch.Added:
-
-			// Take control of yolo-class PodAutoscalers only
-			if pa.Annotations["autoscaling.knative.dev/class"] == "yolo" {
-
-				// Calculate a recommended scale
-				replicas := recommendedScale(pa)
-
-				// Update the Deployment
-				scaleTo(pa, replicas)
-
-				// Update status
-				updateStatus(pa, replicas)
-
-			}
 		}
 	}
 }
