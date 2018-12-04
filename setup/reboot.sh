@@ -33,17 +33,17 @@ kubectl create clusterrolebinding cluster-admin-binding \
 # Deploy Knative Serving
 cd ~/go/src/github.com/knative/serving
 # Based on https://github.com/knative/serving/blob/master/DEVELOPMENT.md
-kubectl apply -f ./third_party/istio-1.0.2/istio-crds.yaml
+kubectl apply -f ./third_party/istio-1.0.4/istio-crds.yaml
 while [ $(kubectl get crd gateways.networking.istio.io -o jsonpath='{.status.conditions[?(@.type=="Established")].status}') != 'True' ]; do
-    echo "Waiting on Istio CRDs"; sleep 1
+  echo "Waiting on Istio CRDs"; sleep 1
 done
-kubectl apply -f ./third_party/istio-1.0.2/istio.yaml
+kubectl apply -f ./third_party/istio-1.0.4/istio.yaml
 kubectl apply -f ./third_party/config/build/release.yaml
 KO_DOCKER_REPO=gcr.io/$PROJECT_ID ko apply -f config/
 
 # Attach static IP to ingress gateway
 # Based on https://github.com/knative/serving/blob/master/docs/setting-up-ingress-static-ip.md
-kubectl patch svc knative-ingressgateway \
+kubectl patch svc istio-ingressgateway \
 	--namespace=istio-system \
 	--patch="{\"spec\": { \"loadBalancerIP\": \"$CLUSTER_INGRESS_IP\" }}"
 
