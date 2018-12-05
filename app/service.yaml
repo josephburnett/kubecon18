@@ -7,9 +7,9 @@ spec:
   runLatest:
     configuration:
       revisionTemplate:
-        metadata:
-          annotations:
-            autoscaling.knative.dev/minScale: "1"
+        # metadata:
+        #   annotations:
+        #     autoscaling.knative.dev/minScale: "1"
         spec:
           container:
             image: gcr.io/joe-does-knative/github.com/josephburnett/kubecon-seattle-2018/app:latest
