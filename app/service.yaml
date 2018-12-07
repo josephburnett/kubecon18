@@ -4,6 +4,10 @@ metadata:
   name: app
   namespace: kubecon-seattle-2018
 spec:
+  # release:
+  #   revisions:
+  #     - app-00001
+  #   rolloutPercent: 0
   runLatest:
     configuration:
       revisionTemplate:
