@@ -8,12 +8,16 @@ import (
 	clientset "github.com/josephburnett/kubecon-seattle-2018/yolo/pkg/client/clientset/versioned"
 	duck "github.com/knative/pkg/apis/duck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+// Pro Tip: if you want to do this in production, copy
+// https://github.com/kubernetes/sample-controller which makes use of
+// client-go informers and implements controller best practices.
 
 func main() {
 
