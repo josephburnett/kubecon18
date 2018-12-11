@@ -74,4 +74,4 @@ kubectl create ns kubecon-seattle-2018
 kubectl apply -f app/service.yaml
 sleep 30 # Let the app startup
 echo
-curl http://app.kubecon-seattle-2018.josephburnett.com/
+curl "http://app.kubecon-seattle-2018.${CLUSTER_DOMAIN_NAME}/"
