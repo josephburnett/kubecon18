@@ -16,7 +16,7 @@ var (
 	sleep = flag.Int("sleep", 500, "milliseconds to sleep")
 	prime = flag.Int("prime", 500000, "calculate largest prime less than")
 	bloat = flag.Int("bloat", 2, "mb of memory to consume")
-	url   = flag.String("url", "http://app.kubecon-seattle-2018.backup.josephburnett.com", "endpoint to get")
+	url   = flag.String("url", "http://app.kubecon-seattle-2018.josephburnett.social", "endpoint to get")
 )
 
 type client struct {

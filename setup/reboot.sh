@@ -4,7 +4,7 @@ PROJECT_ID=joe-does-knative
 CLUSTER_NAME=knative-backup
 CLUSTER_ZONE=us-east1-d
 CLUSTER_INGRESS_IP=35.185.37.171
-CLUSTER_DOMAIN_NAME=backup.josephburnett.com
+CLUSTER_DOMAIN_NAME=josephburnett.social
 
 # Cleanup
 gcloud container clusters delete $CLUSTER_NAME \
