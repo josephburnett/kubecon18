@@ -77,6 +77,8 @@ func main() {
 	for {
 		select {
 		case <-tickerCh:
+			fmt.Printf("\n\n   === LOAD ===\n\n")
+			fmt.Printf("Running 16 clients sending continuous requests consuming\n")
 			fmt.Printf("%v ms requests consuming a little cpu and %v mb of memory\n\n", *sleep, *bloat)
 			fmt.Printf("ID\tCOUNT\tLAST RESPONSE\n")
 			for i, client := range clients {
