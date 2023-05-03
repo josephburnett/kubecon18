@@ -18,13 +18,10 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
 	"math"
-	"net/http"
 	"os"
-	"strconv"
-	"sync"
 	"time"
 )
 
@@ -79,88 +76,48 @@ func allPrimes(N int) []int {
 	return primes
 }
 
-func bloat(mb int) string {
-	b := make([]byte, mb*1024*1024)
-	b[0] = 1
-	b[len(b)-1] = 1
-	return fmt.Sprintf("Allocated %v Mb of memory.\n", mb)
+func goBloat(mb int, out chan string) {
+	go func() {
+		b := make([]byte, mb*1024*1024)
+		b[0] = 1
+		b[len(b)-1] = 1
+		out <- fmt.Sprintf("Allocated %v Mb of memory.\n", mb)
+	}()
 }
 
-func prime(max int) string {
-	p := allPrimes(max)
-	if len(p) > 0 {
-		return fmt.Sprintf("The largest prime less than %v is %v.\n", max, p[len(p)-1])
-	} else {
-		return fmt.Sprintf("There are no primes smaller than %v.\n", max)
-	}
-}
-
-func sleep(ms int) string {
-	start := time.Now().UnixNano()
-	time.Sleep(time.Duration(ms) * time.Millisecond)
-	end := time.Now().UnixNano()
-	return fmt.Sprintf("Slept for %.2f milliseconds.\n", float64(end-start)/1000000)
-}
-
-func parseIntParam(r *http.Request, param string) (int, bool, error) {
-	if value := r.URL.Query().Get(param); value != "" {
-		i, err := strconv.Atoi(value)
-		if err != nil {
-			return 0, false, err
+func goPrime(max int, out chan string) {
+	go func() {
+		p := allPrimes(max)
+		if len(p) > 0 {
+			out <- fmt.Sprintf("The largest prime less than %v is %v.\n", max, p[len(p)-1])
+		} else {
+			out <- fmt.Sprintf("There are no primes smaller than %v.\n", max)
 		}
-		if i == 0 {
-			return i, false, nil
-		}
-		return i, true, nil
-	}
-	return 0, false, nil
+	}()
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	// Validate inputs.
-	ms, hasMs, err := parseIntParam(r, "sleep")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	max, hasMax, err := parseIntParam(r, "prime")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	mb, hasMb, err := parseIntParam(r, "bloat")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	// Consume time, cpu and memory in parallel.
-	var wg sync.WaitGroup
-	defer wg.Wait()
-	if hasMs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			log.Printf(sleep(ms))
-		}()
-	}
-	if hasMax {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			log.Printf(prime(max))
-		}()
-	}
-	if hasMb {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			log.Printf(bloat(mb))
-		}()
-	}
-	fmt.Fprintf(w, version)
+func goSleep(ms int, out chan string) {
+	go func() {
+		start := time.Now().UnixNano()
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+		end := time.Now().UnixNano()
+		out <- fmt.Sprintf("Slept for %.2f milliseconds.\n", float64(end-start)/1000000)
+	}()
 }
+
+var (
+	sleepMs  = flag.Int("sleep-ms", 500, "milliseconds to sleep")
+	primeNth = flag.Int("prime-nth", 500000, "calculate largest prime less than")
+	bloatMb  = flag.Int("bloat-mb", 2, "mb of memory to consume")
+)
 
 func main() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	flag.Parse()
+	out := make(chan string, 3)
+	goBloat(*bloatMb, out)
+	goPrime(*primeNth, out)
+	goSleep(*sleepMs, out)
+	for i := 0; i < 3; i++ {
+		fmt.Printf(<-out)
+	}
 }
