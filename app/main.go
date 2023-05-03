@@ -86,14 +86,15 @@ func goBloat(mb int, out chan string) {
 }
 
 func goPrime(max, concurrent int, out chan string) {
+	start := time.Now().UnixNano()
 	done := make(chan string)
 	for i := 0; i < concurrent; i++ {
 		go func(i int) {
 			p := allPrimes(max)
 			if len(p) > 0 {
-				done <- fmt.Sprintf("The largest prime less than %v is %v. (calculated %v times)\n", max, p[len(p)-1], concurrent)
+				done <- fmt.Sprintf("The largest prime less than %v is %v.\n", max, p[len(p)-1])
 			} else {
-				done <- fmt.Sprintf("There are no primes smaller than %v. (calculated %v times)\n", max, concurrent)
+				done <- fmt.Sprintf("There are no primes smaller than %v.\n", max)
 			}
 		}(i)
 	}
@@ -102,7 +103,9 @@ func goPrime(max, concurrent int, out chan string) {
 		for i := 0; i < concurrent; i++ {
 			answer = <-done
 		}
-		out <- answer
+		end := time.Now().UnixNano()
+		durationMs := float64(end-start) / 1000000
+		out <- answer + fmt.Sprintf("(calculated %v times in %v milliseconds)\n", concurrent, durationMs)
 	}()
 }
 
