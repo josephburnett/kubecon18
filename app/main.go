@@ -85,14 +85,24 @@ func goBloat(mb int, out chan string) {
 	}()
 }
 
-func goPrime(max int, out chan string) {
+func goPrime(max, concurrent int, out chan string) {
+	done := make(chan string)
+	for i := 0; i < concurrent; i++ {
+		go func(i int) {
+			p := allPrimes(max)
+			if len(p) > 0 {
+				done <- fmt.Sprintf("The largest prime less than %v is %v. (calculated %v times)\n", max, p[len(p)-1], concurrent)
+			} else {
+				done <- fmt.Sprintf("There are no primes smaller than %v. (calculated %v times)\n", max, concurrent)
+			}
+		}(i)
+	}
 	go func() {
-		p := allPrimes(max)
-		if len(p) > 0 {
-			out <- fmt.Sprintf("The largest prime less than %v is %v.\n", max, p[len(p)-1])
-		} else {
-			out <- fmt.Sprintf("There are no primes smaller than %v.\n", max)
+		answer := ""
+		for i := 0; i < concurrent; i++ {
+			answer = <-done
 		}
+		out <- answer
 	}()
 }
 
@@ -106,16 +116,17 @@ func goSleep(ms int, out chan string) {
 }
 
 var (
-	sleepMs  = flag.Int("sleep-ms", 500, "milliseconds to sleep")
-	primeNth = flag.Int("prime-nth", 500000, "calculate largest prime less than")
-	bloatMb  = flag.Int("bloat-mb", 2, "mb of memory to consume")
+	sleepMs         = flag.Int("sleep-ms", 500, "milliseconds to sleep")
+	primeNth        = flag.Int("prime-nth", 500000, "calculate largest prime less than")
+	primeConcurrent = flag.Int("prime-concurrent", 1, "prime calculations to run concurrently")
+	bloatMb         = flag.Int("bloat-mb", 2, "mb of memory to consume")
 )
 
 func main() {
 	flag.Parse()
 	out := make(chan string, 3)
 	goBloat(*bloatMb, out)
-	goPrime(*primeNth, out)
+	goPrime(*primeNth, *primeConcurrent, out)
 	goSleep(*sleepMs, out)
 	for i := 0; i < 3; i++ {
 		fmt.Printf(<-out)
